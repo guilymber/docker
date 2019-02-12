@@ -1,0 +1,60 @@
+version: '3'
+
+volumes:
+ repo:
+ portainer_data:
+
+services:
+ site:
+  image: gpolicante/ivar-site
+  hostname: ivar
+  container_name: ivarsite
+  labels:
+    - "traefik.frontend.rule=Host:ivar.dexter.com.br"
+    - "traefik.port=80"
+
+#  ports:
+#   - 8085:80
+  volumes:
+   - repo:/usr/local/apache2/htdocs
+   - /srv/backup:/data
+
+
+ portainer:
+  image: portainer/portainer
+  ports:
+   - 9000:9000
+  volumes:
+   - /var/run/docker.sock:/var/run/docker.sock
+   - portainer_data:/data
+  
+
+
+ monitoracao:
+  image: google/cadvisor
+  labels:
+    - "traefik.frontend.rules=Host:monitoracao.dexter.com.br"
+    - "traefik.port=8080"
+#  ports:
+#   - 8585:8080
+  volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro
+    - /sys:/sys:ro
+    - /var/lib/docker:/var/lib/docker:ro
+    - /dev/disk:/dev/disk:ro
+
+
+ reverse-proxy:
+  image: traefik
+  command:
+   - "--api"
+   - "--docker"
+   - "--web"
+  ports:
+   - 80:80
+   - 8080:8080
+  volumes:
+   - /var/run/docker.sock:/var/run/docker.sock   
+
+
